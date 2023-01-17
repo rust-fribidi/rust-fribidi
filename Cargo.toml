@@ -1,8 +1,31 @@
 [package]
 name = "fribidi"
+description = "SDL2 bindings for Rust"
+repository = "https://github.com/baronleonardo/rust-fribidi"
+# documentation = "https://rust-sdl2.github.io/rust-sdl2/sdl2/"
+license = "MIT"
+authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@protonmail.com>"]
+keywords = ["fribidi", "text", "font", "api", "arabic", "RTL"]
+categories = ["rendering","api-bindings"]
+readme = "README.md"
+resolver = "2"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[build-dependencies]
+pkg-config = { version = "^0.3", optional = true }
+
+[dependencies.fribidi-sys]
+path = "fribidi-sys"
+version = "^0.1"
 
 [dependencies]
+
+
+[lib]
+name = "fribidi"
+path = "src/lib.rs"
+
+[features]
+default = ["pkg-config"]
+static = ["fribidi-sys/static"]
