@@ -20,7 +20,7 @@ path = "fribidi-sys"
 version = "^0.1"
 
 [dependencies]
-
+widestring = "^1.0"
 
 [lib]
 name = "fribidi"
