@@ -186,6 +186,25 @@ impl Fribidi
             res.iter_mut().map(|ch| std::mem::transmute(*ch)).collect()
         }
     }
+
+    /// fribidi_get_bidi_type_name - get bidi type name
+    ///
+    /// This function returns the bidi type name of a character type.
+    ///
+    /// The type names are the same as ones defined in Table 3.7 Bidirectional
+    /// Character Types of the Unicode Bidirectional Algorithm available at
+    /// http://www.unicode.org/reports/tr9/#Bidirectional_Character_Types, with a
+    /// few modifications: L->LTR, R->RTL, B->BS, S->SS.
+    ///
+    pub fn get_bidi_type_name (char_type: CharType) -> String
+    {
+        // unsafe {
+        //     let bidi_type_name = fribidi_bindings::fribidi_get_bidi_type_name(char_type as u32);
+        //     std::ffi::CStr::from_ptr(bidi_type_name).to_str().unwrap()
+        // }
+
+        format!("{:?}", char_type)
+    }
 }
 
 #[cfg(test)]
@@ -267,5 +286,15 @@ mod test
         ];
         
         assert_eq!(types, gt);
+    }
+
+    #[test]
+    fn test_get_bidi_type_name ()
+    {
+        let char_type = CharType::EuropeanNumberSeparator;
+        let gt = "EuropeanNumberSeparator".to_owned();
+
+        let char_type_name = Fribidi::get_bidi_type_name(char_type);
+        assert_eq!(char_type_name, gt);
     }
 }
