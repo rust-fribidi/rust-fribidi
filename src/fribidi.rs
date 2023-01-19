@@ -2,19 +2,48 @@ use std::{ptr::null_mut};
 
 use widestring::{U32String, u32str};
 
-use fribidi_sys::fribidi_bindings::{fribidi_remove_bidi_marks, fribidi_log2vis};
+use fribidi_sys::fribidi_bindings::{fribidi_remove_bidi_marks, fribidi_log2vis, fribidi_get_bidi_type, fribidi_get_bidi_types};
 
 pub struct Fribidi;
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy)]
+#[derive(PartialEq, PartialOrd, Debug, Clone, Copy)]
 pub enum ParagraphType
 {
-    LTR  = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_LTR,
-    RTL  = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_RTL,
-    ON   = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_ON,
-    WLTR = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WLTR,
-    WRTL = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WRTL,
+    LeftToRight     = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_LTR,
+    RightToLeft     = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_RTL,
+    OtherNetural    = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_ON,
+    WeakLeftToRight = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WLTR,
+    WeakRightToLeft = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WRTL,
+}
+
+#[repr(u32)]
+#[derive(PartialEq, PartialOrd, Debug, Clone, Copy)]
+pub enum CharType
+{
+    LeftToRight              = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LTR,
+    RightToLeft              = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RTL,
+    ArabicLetter             = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AL,
+    EuropeanNumeral          = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_EN,
+    ArabicNumeral            = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AN,
+    EuropeanNumberSeparator  = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ES,
+    EuropeanNumberTerminator = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ET,
+    CommonSeparator          = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_CS,
+    NonSpacingMark           = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_NSM,
+    BoundaryNeutral          = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BN,
+    BlockSeparator           = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BS,
+    SegmentSeparator         = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_SS,
+    WhiteSpace               = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_WS,
+    OtherNeutral             = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ON,
+    LeftToRightEmbedding     = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRE,
+    RightToLeftEmbedding     = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLE,
+    LeftToRightOverride      = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRO,
+    RightToLeftOverride      = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLO,
+    PopDirectionalFlag       = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDF,
+    LeftToRightIsolate       = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRI,
+    RightToLeftIsolate       = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLI,
+    FirstStongIsolate        = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_FSI,
+    PopDirectionalIsolate    = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDI,
 }
 
 impl Fribidi
@@ -114,6 +143,47 @@ impl Fribidi
             _ => Ok((visual_str, maximum_level))
         }
     }
+
+    /// fribidi_get_bidi_type - get character bidi type
+    ///
+    /// This function returns the bidi type of a character as defined in Table 3.7
+    /// Bidirectional Character Types of the Unicode Bidirectional Algorithm
+    /// available at
+    /// http://www.unicode.org/reports/tr9/#Bidirectional_Character_Types, using
+    /// data provided in file UnicodeData.txt of the Unicode Character Database
+    /// available at http://www.unicode.org/Public/UNIDATA/UnicodeData.txt.
+    ///
+    /// There are a few macros defined in fribidi-bidi-types.h for querying a bidi
+    /// type.
+    ///
+    pub fn get_bidi_type (input_char: char) -> CharType
+    {
+        let char_type = unsafe {
+            std::mem::transmute(fribidi_get_bidi_type(input_char as u32))
+        };
+
+        char_type        
+    }
+
+    /// fribidi_get_bidi_types - get bidi types for an string of characters
+    ///
+    /// This function finds the bidi types of an string of characters.  See
+    /// fribidi_get_bidi_type() for more information about the bidi types returned
+    /// by this function.
+    ///
+    pub fn get_bidi_types (input_str: &U32String) -> Vec<CharType>
+    {
+        let mut res: Vec<u32> = vec![0;input_str.len()];
+        unsafe {
+            fribidi_get_bidi_types(
+                input_str.as_ptr(),
+                input_str.len() as i32,
+                res.as_mut_ptr()
+            );
+
+            res.iter_mut().map(|ch| std::mem::transmute(*ch)).collect()
+        }
+    }
 }
 
 #[cfg(test)]
@@ -121,7 +191,7 @@ mod test
 {
     use widestring::U32String;
 
-    use super::{Fribidi, ParagraphType};
+    use super::{Fribidi, ParagraphType, CharType};
 
     #[test]
     fn test_remove_bidi_marks()
@@ -157,7 +227,7 @@ mod test
 
         let (res, maximum_level) = Fribidi::log2vis(
             &text,
-            ParagraphType::RTL,
+            ParagraphType::RightToLeft,
             Some(&mut positions_l_to_v),
             Some(&mut positions_v_to_l),
             Some(&mut embedding_levels)
@@ -167,5 +237,33 @@ mod test
         assert_eq!(positions_l_to_v, gt_positions_l_to_v);
         assert_eq!(positions_v_to_l, gt_positions_v_to_l);
         assert_eq!(embedding_levels, gt_embedding_levels);
+    }
+
+    #[test]
+    fn test_get_bidi_type ()
+    {
+        let ch = 'غ';
+        let ch_type = Fribidi::get_bidi_type(ch);
+        let gt = CharType::ArabicLetter;
+        
+        assert_eq!(ch_type, gt);
+    }
+
+    #[test]
+    fn test_get_bidi_types ()
+    {
+        let text = U32String::from("غ!A西Б1٤");
+        let types = Fribidi::get_bidi_types(&text);
+        let gt = vec![
+            CharType::ArabicLetter,
+            CharType::OtherNeutral,
+            CharType::LeftToRight,
+            CharType::LeftToRight,
+            CharType::LeftToRight,
+            CharType::EuropeanNumeral,
+            CharType::ArabicNumeral
+        ];
+        
+        assert_eq!(types, gt);
     }
 }
