@@ -2,7 +2,7 @@ use std::{ptr::null_mut};
 
 use widestring::{U32String, u32str};
 
-use fribidi_sys::fribidi_bindings::{fribidi_remove_bidi_marks, fribidi_log2vis, fribidi_get_bidi_type, fribidi_get_bidi_types};
+use fribidi_sys::fribidi_bindings;
 
 pub struct Fribidi;
 
@@ -10,40 +10,40 @@ pub struct Fribidi;
 #[derive(PartialEq, PartialOrd, Debug, Clone, Copy)]
 pub enum ParagraphType
 {
-    LeftToRight     = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_LTR,
-    RightToLeft     = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_RTL,
-    OtherNetural    = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_ON,
-    WeakLeftToRight = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WLTR,
-    WeakRightToLeft = fribidi_sys::fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WRTL,
+    LeftToRight     = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_LTR,
+    RightToLeft     = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_RTL,
+    OtherNetural    = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_ON,
+    WeakLeftToRight = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WLTR,
+    WeakRightToLeft = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WRTL,
 }
 
 #[repr(u32)]
 #[derive(PartialEq, PartialOrd, Debug, Clone, Copy)]
 pub enum CharType
 {
-    LeftToRight              = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LTR,
-    RightToLeft              = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RTL,
-    ArabicLetter             = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AL,
-    EuropeanNumeral          = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_EN,
-    ArabicNumeral            = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AN,
-    EuropeanNumberSeparator  = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ES,
-    EuropeanNumberTerminator = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ET,
-    CommonSeparator          = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_CS,
-    NonSpacingMark           = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_NSM,
-    BoundaryNeutral          = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BN,
-    BlockSeparator           = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BS,
-    SegmentSeparator         = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_SS,
-    WhiteSpace               = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_WS,
-    OtherNeutral             = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ON,
-    LeftToRightEmbedding     = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRE,
-    RightToLeftEmbedding     = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLE,
-    LeftToRightOverride      = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRO,
-    RightToLeftOverride      = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLO,
-    PopDirectionalFlag       = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDF,
-    LeftToRightIsolate       = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRI,
-    RightToLeftIsolate       = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLI,
-    FirstStongIsolate        = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_FSI,
-    PopDirectionalIsolate    = fribidi_sys::fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDI,
+    LeftToRight              = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LTR,
+    RightToLeft              = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RTL,
+    ArabicLetter             = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AL,
+    EuropeanNumeral          = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_EN,
+    ArabicNumeral            = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AN,
+    EuropeanNumberSeparator  = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ES,
+    EuropeanNumberTerminator = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ET,
+    CommonSeparator          = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_CS,
+    NonSpacingMark           = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_NSM,
+    BoundaryNeutral          = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BN,
+    BlockSeparator           = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BS,
+    SegmentSeparator         = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_SS,
+    WhiteSpace               = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_WS,
+    OtherNeutral             = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ON,
+    LeftToRightEmbedding     = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRE,
+    RightToLeftEmbedding     = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLE,
+    LeftToRightOverride      = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRO,
+    RightToLeftOverride      = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLO,
+    PopDirectionalFlag       = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDF,
+    LeftToRightIsolate       = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRI,
+    RightToLeftIsolate       = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLI,
+    FirstStongIsolate        = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_FSI,
+    PopDirectionalIsolate    = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDI,
 }
 
 impl Fribidi
@@ -79,7 +79,7 @@ impl Fribidi
     ) -> Result<&'a U32String, String>
     {
         let result_string_len = unsafe {
-            fribidi_remove_bidi_marks(
+            fribidi_bindings::fribidi_remove_bidi_marks(
                 input_str.as_mut_ptr(),
                 input_str.len() as i32,
                 if let Some(positions) = positions_to_this {positions.as_mut_ptr()} else {null_mut()},
@@ -126,7 +126,7 @@ impl Fribidi
         let mut visual_str = std::iter::repeat(" ").take(input_str.len()).collect::<U32String>();
 
         let maximum_level = unsafe {
-            fribidi_log2vis(
+            fribidi_bindings::fribidi_log2vis(
                 input_str.as_ptr(),
                 input_str.len() as i32,
                 &mut (pbase_dir as u32),
@@ -159,7 +159,9 @@ impl Fribidi
     pub fn get_bidi_type (input_char: char) -> CharType
     {
         let char_type = unsafe {
-            std::mem::transmute(fribidi_get_bidi_type(input_char as u32))
+            std::mem::transmute (
+                fribidi_bindings::fribidi_get_bidi_type(input_char as u32)
+            )
         };
 
         char_type        
@@ -175,7 +177,7 @@ impl Fribidi
     {
         let mut res: Vec<u32> = vec![0;input_str.len()];
         unsafe {
-            fribidi_get_bidi_types(
+            fribidi_bindings::fribidi_get_bidi_types(
                 input_str.as_ptr(),
                 input_str.len() as i32,
                 res.as_mut_ptr()
