@@ -1,11 +1,11 @@
-use std::{ptr::null_mut, mem::transmute};
+use std::{ptr::{null_mut, null}, mem::transmute};
 
 use widestring::{U32String, u32str};
 
 use fribidi_sys::fribidi_bindings;
 
 pub mod bracket;
-use bracket::BracketType;
+use bracket::Bracket;
 
 pub struct Fribidi;
 pub type Level = i8;
@@ -256,13 +256,16 @@ impl Fribidi
     // FRIBIDI_ENTRY FriBidiLevel
     pub fn get_par_embedding_levels_ex (
         char_types: &Vec<CharType>,
-        bracket_types: &Vec<BracketType>,
+        bracket_types: Option<&Vec<Bracket>>,
         paragraph_direction: ParagraphType
     ) -> Result<(Vec<Level>, Level, ParagraphType), String>
     {
-        if char_types.len() != bracket_types.len()
+        if bracket_types.is_some()
         {
-            return Err("char_types length must equals bracket_types length".to_owned());
+            if char_types.len() != bracket_types.map_or(char_types.len(), |types| types.len())
+            {
+                return Err("char_types length must equals bracket_types length".to_owned());
+            }
         }
 
         let mut res: Vec<Level> = vec![0; char_types.len()];
@@ -271,7 +274,7 @@ impl Fribidi
         let max_embedding_level = unsafe {
             fribidi_bindings::fribidi_get_par_embedding_levels_ex (
                 char_types.as_ptr() as *const u32,
-                bracket_types.as_ptr() as *const u32,
+                if let Some(types) = bracket_types { types.as_ptr() as *const u32 } else { null() },
                 char_types.len() as i32,
                 &mut (paragraph_direction as u32),
                 res.as_mut_ptr()
@@ -291,7 +294,8 @@ mod test
 {
     use widestring::U32String;
 
-    use crate::BracketType;
+    #[allow(unused_imports)]
+    use crate::Bracket;
 
     use super::{Fribidi, ParagraphType, CharType, Level};
 
@@ -391,18 +395,27 @@ mod test
     }
 
     #[test]
-    fn test_get_bracket()
-    {
-        let ch = '[';
-        let bracketed_char = super::bracket::Bracket::get_bracket(ch);
-        let gt = BracketType::RightSquareBracket;
-
-        assert_eq!(bracketed_char, gt);
-    }
-
-    #[test]
     fn test_get_par_embedding_levels_ex ()
     {
-        unimplemented!()
+        let text = U32String::from("(أحمد خالد 比 توفـــــيق boieng 1997)");
+        let char_types = Fribidi::get_bidi_types(&text);
+        let bracket_types = Bracket::parse(&text, &char_types);
+        let paragraph_dir = Fribidi::get_par_direction(&char_types);
+
+        let res = Fribidi::get_par_embedding_levels_ex(
+            &char_types,
+            Some(&bracket_types),
+            paragraph_dir
+        );
+        assert!(res.is_ok());
+        let (embedding_levels, max_embedding_level, paragraph_type) = res.unwrap();
+
+        let gt_embedding_levels: Vec<i8> = vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1];
+        let gt_max_embedding_level = 3;
+        let gt_paragraph_type = ParagraphType::RightToLeft;
+
+        assert_eq!(embedding_levels, gt_embedding_levels);
+        assert_eq!(max_embedding_level, gt_max_embedding_level);
+        assert_eq!(paragraph_type, gt_paragraph_type);
     }
 }
