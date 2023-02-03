@@ -5,24 +5,15 @@ use widestring::{U32String, u32str};
 use fribidi_sys::fribidi_bindings;
 
 pub mod bracket;
-use bracket::Bracket;
+use bracket::BracketType;
 pub mod char;
 use crate::char::CharType;
+pub mod level;
+use level::LevelType;
+pub mod paragraph;
+use paragraph::ParagraphType;
 
 pub struct Fribidi;
-pub type Level = i8;
-
-#[repr(u32)]
-#[derive(PartialEq, PartialOrd, Debug, Clone, Copy)]
-pub enum ParagraphType
-{
-    LeftToRight     = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_LTR,
-    RightToLeft     = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_RTL,
-    OtherNeutral    = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_ON,
-    WeakLeftToRight = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WLTR,
-    WeakRightToLeft = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WRTL,
-}
-
 impl Fribidi
 {
     /// fribidi_remove_bidi_marks - remove bidi marks out of an string
@@ -51,7 +42,7 @@ impl Fribidi
         input_str: &'a mut U32String,
         positions_to_this: Option<&mut Vec<i32>>,
         position_from_this_list: Option<&mut Vec<i32>>,
-        embedding_levels: Option<&mut Vec<Level>>
+        embedding_levels: Option<&mut Vec<LevelType>>
     ) -> Result<&'a U32String, String>
     {
         let result_string_len = unsafe {
@@ -60,7 +51,7 @@ impl Fribidi
                 input_str.len() as i32,
                 if let Some(positions) = positions_to_this {positions.as_mut_ptr()} else {null_mut()},
                 if let Some(positions) = position_from_this_list {positions.as_mut_ptr()} else {null_mut()},
-                if let Some(levels) = embedding_levels {levels.as_mut_ptr()} else {null_mut()}
+                if let Some(levels) = embedding_levels {levels.as_mut_ptr() as *mut i8} else {null_mut()}
             )
         };
 
@@ -91,12 +82,12 @@ impl Fribidi
     /// Returns: Maximum level found plus one, or zero if any error occurred
     /// (memory allocation failure most probably).
     ///
-    pub fn log2vis(
+    pub fn logic_to_visual(
         input_str: &U32String,
         pbase_dir: ParagraphType,
         positions_l_to_v: Option<&mut Vec<i32>>,
         positions_v_to_l: Option<&mut Vec<i32>>,
-        embedding_levels: Option<&mut Vec<Level>>
+        embedding_levels: Option<&mut Vec<LevelType>>
     ) -> Result<(U32String, i8), String>
     {
         let mut visual_str = std::iter::repeat(" ").take(input_str.len()).collect::<U32String>();
@@ -109,7 +100,7 @@ impl Fribidi
                 visual_str.as_mut_ptr(),
                 if let Some(positions) = positions_l_to_v {positions.as_mut_ptr()} else {null_mut()},
                 if let Some(positions) = positions_v_to_l {positions.as_mut_ptr()} else {null_mut()},
-                if let Some(levels) = embedding_levels {levels.as_mut_ptr()} else {null_mut()}
+                if let Some(levels) = embedding_levels {levels.as_mut_ptr() as *mut i8} else {null_mut()}
             )
         };
 
@@ -229,9 +220,9 @@ impl Fribidi
     // FRIBIDI_ENTRY FriBidiLevel
     pub fn get_par_embedding_levels_ex (
         char_types: &Vec<CharType>,
-        bracket_types: Option<&Vec<Bracket>>,
+        bracket_types: Option<&Vec<BracketType>>,
         paragraph_direction: ParagraphType
-    ) -> Result<(Vec<Level>, Level, ParagraphType), String>
+    ) -> Result<(Vec<LevelType>, LevelType, ParagraphType), String>
     {
         if bracket_types.is_some()
         {
@@ -241,7 +232,7 @@ impl Fribidi
             }
         }
 
-        let mut res: Vec<Level> = vec![0; char_types.len()];
+        let mut res: Vec<LevelType> = vec![LevelType(0); char_types.len()];
         let paragraph_direction: ParagraphType = paragraph_direction;
 
         let max_embedding_level = unsafe {
@@ -250,14 +241,14 @@ impl Fribidi
                 if let Some(types) = bracket_types { types.as_ptr() as *const u32 } else { null() },
                 char_types.len() as i32,
                 &mut (paragraph_direction as u32),
-                res.as_mut_ptr()
+                res.as_mut_ptr() as *mut i8
             )
         };
 
         match max_embedding_level
         {
             0 => Err("memory allocation failed".to_owned()),
-            _ => Ok((res, max_embedding_level, paragraph_direction))
+            _ => Ok((res, LevelType(max_embedding_level), paragraph_direction))
         }
     }
 }
@@ -268,9 +259,9 @@ mod test
     use widestring::U32String;
 
     #[allow(unused_imports)]
-    use crate::Bracket;
+    use crate::BracketType;
 
-    use super::{Fribidi, ParagraphType, CharType, Level};
+    use super::{Fribidi, ParagraphType, CharType, LevelType};
 
     #[test]
     fn test_remove_bidi_marks()
@@ -298,13 +289,13 @@ mod test
         let gt = (U32String::from("\u{FEE6}\u{FEF4}\u{FEEC}\u{FEE3}\u{FEAE}\u{FB7C}"), 2);
         let gt_positions_l_to_v = vec![5, 4, 3, 2, 1, 0];
         let gt_positions_v_to_l = vec![5, 4, 3, 2, 1, 0];
-        let gt_embedding_levels = vec![1; 6];
+        let gt_embedding_levels = vec![LevelType(1); 6];
 
         let mut positions_l_to_v :Vec<i32> = vec![1; text.len()];
         let mut positions_v_to_l :Vec<i32> = vec![1; text.len()];
-        let mut embedding_levels: Vec<Level> = vec![1; text.len()];
+        let mut embedding_levels: Vec<LevelType> = vec![LevelType(1); text.len()];
 
-        let (res, maximum_level) = Fribidi::log2vis(
+        let (res, maximum_level) = Fribidi::logic_to_visual(
             &text,
             ParagraphType::RightToLeft,
             Some(&mut positions_l_to_v),
@@ -372,7 +363,7 @@ mod test
     {
         let text = U32String::from("(أحمد خالد 比 توفـــــيق boieng 1997)");
         let char_types = Fribidi::get_bidi_types(&text);
-        let bracket_types = Bracket::parse(&text, &char_types);
+        let bracket_types = BracketType::parse(&text, &char_types);
         let paragraph_dir = Fribidi::get_par_direction(&char_types);
 
         let res = Fribidi::get_par_embedding_levels_ex(
@@ -383,8 +374,12 @@ mod test
         assert!(res.is_ok());
         let (embedding_levels, max_embedding_level, paragraph_type) = res.unwrap();
 
-        let gt_embedding_levels: Vec<i8> = vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1];
-        let gt_max_embedding_level = 3;
+        let gt_embedding_levels: Vec<LevelType> = 
+            vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]
+                .iter()
+                .map(|&elm| LevelType(elm))
+                .collect();
+        let gt_max_embedding_level = LevelType(3);
         let gt_paragraph_type = ParagraphType::RightToLeft;
 
         assert_eq!(embedding_levels, gt_embedding_levels);

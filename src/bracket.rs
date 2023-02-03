@@ -4,17 +4,11 @@ use widestring::U32String;
 
 use crate::CharType;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Bracket {
-    btype: u32
-}
+pub type Bracket = u32;
 
-impl From<u32> for Bracket
-{
-    fn from(raw: u32) -> Self {
-        Self { btype: raw }
-    }
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BracketType(Bracket);
+
 
 /// This function finds the bracketed equivalent of a character as defined in
 /// the file BidiBrackets.txt of the Unicode Character Database available at
@@ -28,21 +22,14 @@ impl From<u32> for Bracket
 /// Returns: The bracket type of the character. Use the
 /// FRIBIDI_IS_BRACKET(FriBidiBracketType) to test if it is a valid
 /// property.
-impl From<char> for Bracket
+impl From<char> for BracketType
 {
     fn from(raw: char) -> Self {
-        Self { btype: raw as u32 }
-    }
-}
-
-impl Into<u32> for Bracket
-{
-    fn into(self) -> u32 {
-        self.btype
+        Self::from_char(raw)
     }
 }
     
-impl Bracket
+impl BracketType
 {
     /// new - get bracketed character
     ///
@@ -59,28 +46,28 @@ impl Bracket
     /// FRIBIDI_IS_BRACKET(FriBidiBracketType) to test if it is a valid
     /// property.
     ///
-    pub fn from_char (ch: char) -> Bracket
+    pub fn from_char (ch: char) -> BracketType
     {
-        Self::from_u32(ch as u32)
+        Self::from_bracket(ch as Bracket)
     }
 
-    pub fn from_u32 (raw: u32) -> Bracket
+    pub fn from_bracket (raw: Bracket) -> BracketType
     {
         let raw_btype = unsafe {
             fribidi_bindings::fribidi_get_bracket(raw)
         };
 
-        Self { btype: raw_btype }
+        Self(raw_btype)
     }
 
     pub fn is_open(&self) -> bool
     {
-        (self.btype & fribidi_bindings::FRIBIDI_BRACKET_OPEN_MASK) > 0
+        (self.0 & fribidi_bindings::FRIBIDI_BRACKET_OPEN_MASK) > 0
     }
 
     pub fn get_id(&self) -> u32
     {
-        self.btype & fribidi_bindings::FRIBIDI_BRACKET_ID_MASK
+        self.0 & fribidi_bindings::FRIBIDI_BRACKET_ID_MASK
     }
 
     /// parse - get bracketed characters
@@ -92,9 +79,9 @@ impl Bracket
     pub fn parse (
         input_str: &U32String,
         char_types: &Vec<CharType>
-    ) -> Vec<Bracket>
+    ) -> Vec<BracketType>
     {
-        let mut bracket_types: Vec<Bracket> = vec![0.into(); input_str.len()];
+        let mut bracket_types: Vec<BracketType> = vec![BracketType(0); input_str.len()];
         unsafe {
             fribidi_bindings::fribidi_get_bracket_types(
                 input_str.as_ptr(),
@@ -113,15 +100,15 @@ mod test
 {
     use widestring::U32String;
 
-    use crate::bracket::Bracket;
+    use crate::bracket::BracketType;
 
     #[test]
     fn test_get_bracket()
     {
-        let bracketed_char: Bracket = ']'.into();
-        let gt = '['.into();
+        let bracketed_char: BracketType = ']'.into();
+        let gt: BracketType = '['.into();
 
-        assert_eq!(bracketed_char, gt);
+        assert_eq!(bracketed_char.get_id(), gt.get_id());
     }
 
     #[test]
@@ -129,10 +116,10 @@ mod test
     {
         let text = U32String::from("[{][أحمد)");
         let char_types = crate::Fribidi::get_bidi_types(&text);
-        let bracket_types = Bracket::parse(&text, &char_types);
-        let gt: Vec<Bracket> = [2147483739 as u32, 2147483771, 91, 2147483739, 0, 0, 0, 0, 40]
-            .iter()    
-            .map(|n| (*n).into())
+        let bracket_types = BracketType::parse(&text, &char_types);
+        let gt: Vec<BracketType> = [2147483739 as u32, 2147483771, 91, 2147483739, 0, 0, 0, 0, 40]
+            .iter()
+            .map(|n| BracketType(*n))
             .collect();
 
         assert_eq!(bracket_types, gt);

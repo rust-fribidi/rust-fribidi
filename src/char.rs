@@ -1,8 +1,9 @@
 use std::mem::transmute;
 
 use fribidi_sys::fribidi_bindings;
+use crate::level::LevelType;
 
-type Char = u32;
+pub type Char = u32;
 
 #[repr(u32)]
 #[derive(PartialEq, PartialOrd, Debug, Clone, Copy)]
@@ -33,17 +34,20 @@ pub enum CharType
     PopDirectionalIsolate    = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDI,
 }
 
-impl TryFrom<u32> for CharType
+impl TryFrom<Char> for CharType
 {
     type Error = &'static str;
 
-    fn try_from(raw: u32) -> Result<Self, Self::Error>
+    fn try_from(raw: Char) -> Result<Self, Self::Error>
     {
         let res: CharType = unsafe { transmute(raw) };
-        match res as u32
+        if res as Char == raw
         {
-            raw => Ok(res),
-            _ => Err("Wrong u32 input")
+            Ok(res)
+        }
+        else
+        {
+            Err("Wrong Char input")
         }
     }
 }
@@ -54,14 +58,7 @@ impl TryFrom<char> for CharType
 
     fn try_from(raw: char) -> Result<Self, Self::Error>
     {
-        (raw as u32).try_into()
-    }
-}
-
-impl Into<u32> for CharType
-{
-    fn into(self) -> u32 {
-        self as u32
+        (raw as Char).try_into()
     }
 }
 
@@ -212,4 +209,22 @@ impl CharType
         ch & fribidi_bindings::FRIBIDI_MASK_PRIVATE != 0
     }
 
+    /// Change numbers to RTL: EN,AN -> RTL.
+    pub fn into_right_to_left(ch: Char) -> Result<CharType, &'static str>
+    {
+        match Self::is_number(ch) {
+            true => Ok(CharType::RightToLeft),
+            false => ch.try_into()
+        }
+    }
+
+    /// Override status of an explicit mark:
+    /// LRO,LRE->LTR, RLO,RLE->RTL, otherwise->ON.
+    pub fn explicit_to_override_dir(ch: Char) -> CharType
+    {
+        match Self::is_override(ch) {
+            true => LevelType::to_chartype(&LevelType::from_char(ch)),
+		    false => CharType::OtherNeutral
+        }
+    }
 }
