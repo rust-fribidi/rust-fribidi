@@ -6,6 +6,8 @@ use fribidi_sys::fribidi_bindings;
 
 pub mod bracket;
 use bracket::Bracket;
+pub mod char;
+use crate::char::CharType;
 
 pub struct Fribidi;
 pub type Level = i8;
@@ -19,35 +21,6 @@ pub enum ParagraphType
     OtherNeutral    = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_ON,
     WeakLeftToRight = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WLTR,
     WeakRightToLeft = fribidi_bindings::FriBidiParType_FRIBIDI_PAR_WRTL,
-}
-
-#[repr(u32)]
-#[derive(PartialEq, PartialOrd, Debug, Clone, Copy)]
-pub enum CharType
-{
-    LeftToRight              = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LTR,
-    RightToLeft              = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RTL,
-    ArabicLetter             = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AL,
-    EuropeanNumeral          = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_EN,
-    ArabicNumeral            = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_AN,
-    EuropeanNumberSeparator  = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ES,
-    EuropeanNumberTerminator = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ET,
-    CommonSeparator          = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_CS,
-    NonSpacingMark           = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_NSM,
-    BoundaryNeutral          = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BN,
-    BlockSeparator           = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_BS,
-    SegmentSeparator         = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_SS,
-    WhiteSpace               = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_WS,
-    OtherNeutral             = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_ON,
-    LeftToRightEmbedding     = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRE,
-    RightToLeftEmbedding     = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLE,
-    LeftToRightOverride      = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRO,
-    RightToLeftOverride      = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLO,
-    PopDirectionalFlag       = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDF,
-    LeftToRightIsolate       = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_LRI,
-    RightToLeftIsolate       = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_RLI,
-    FirstStongIsolate        = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_FSI,
-    PopDirectionalIsolate    = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDI,
 }
 
 impl Fribidi
