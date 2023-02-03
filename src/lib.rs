@@ -1,4 +1,4 @@
-use std::{ptr::{null_mut, null}, mem::transmute};
+use std::ptr::{null_mut, null};
 
 use widestring::{U32String, u32str};
 
@@ -111,97 +111,6 @@ impl Fribidi
         }
     }
 
-    /// fribidi_get_bidi_type - get character bidi type
-    ///
-    /// This function returns the bidi type of a character as defined in Table 3.7
-    /// Bidirectional Character Types of the Unicode Bidirectional Algorithm
-    /// available at
-    /// http://www.unicode.org/reports/tr9/#Bidirectional_Character_Types, using
-    /// data provided in file UnicodeData.txt of the Unicode Character Database
-    /// available at http://www.unicode.org/Public/UNIDATA/UnicodeData.txt.
-    ///
-    /// There are a few macros defined in fribidi-bidi-types.h for querying a bidi
-    /// type.
-    ///
-    pub fn get_bidi_type (input_char: char) -> CharType
-    {
-        let char_type = unsafe {
-            transmute (
-                fribidi_bindings::fribidi_get_bidi_type(input_char as u32)
-            )
-        };
-
-        char_type        
-    }
-
-    /// fribidi_get_bidi_types - get bidi types for an string of characters
-    ///
-    /// This function finds the bidi types of an string of characters.  See
-    /// fribidi_get_bidi_type() for more information about the bidi types returned
-    /// by this function.
-    ///
-    pub fn get_bidi_types (input_str: &U32String) -> Vec<CharType>
-    {
-        let mut res: Vec<u32> = vec![0;input_str.len()];
-        unsafe {
-            fribidi_bindings::fribidi_get_bidi_types(
-                input_str.as_ptr(),
-                input_str.len() as i32,
-                res.as_mut_ptr()
-            );
-
-            res.iter_mut().map(|ch| std::mem::transmute(*ch)).collect()
-        }
-    }
-
-    /// fribidi_get_bidi_type_name - get bidi type name
-    ///
-    /// This function returns the bidi type name of a character type.
-    ///
-    /// The type names are the same as ones defined in Table 3.7 Bidirectional
-    /// Character Types of the Unicode Bidirectional Algorithm available at
-    /// http://www.unicode.org/reports/tr9/#Bidirectional_Character_Types, with a
-    /// few modifications: L->LTR, R->RTL, B->BS, S->SS.
-    ///
-    pub fn get_bidi_type_name (char_type: CharType) -> String
-    {
-        // unsafe {
-        //     let bidi_type_name = fribidi_bindings::fribidi_get_bidi_type_name(char_type as u32);
-        //     std::ffi::CStr::from_ptr(bidi_type_name).to_str().unwrap()
-        // }
-
-        format!("{:?}", char_type)
-    }
-
-    /// fribidi_get_par_direction - get base paragraph direction
-    ///
-    /// This function finds the base direction of a single paragraph,
-    /// as defined by rule P2 of the Unicode Bidirectional Algorithm available at
-    /// http://www.unicode.org/reports/tr9/#P2.
-    ///
-    /// You typically do not need this function as
-    /// fribidi_get_par_embedding_levels() knows how to compute base direction
-    /// itself, but you may need this to implement a more sophisticated paragraph
-    /// direction handling.  Note that you can pass more than a paragraph to this
-    /// function and the direction of the first non-neutral paragraph is returned,
-    /// which is a very good heuristic to set direction of the neutral paragraphs
-    /// at the beginning of text.  For other neutral paragraphs, you better use the
-    /// direction of the previous paragraph.
-    ///
-    /// Returns: Base pargraph direction.  No weak paragraph direction is returned,
-    /// only LeftToRight, RightToLeft, or OtherNeutral.
-    ///
-    pub fn get_par_direction (char_types: &Vec<CharType>) -> ParagraphType
-    {
-        let par_direction = unsafe {
-            // let bidi_type_name = fribidi_bindings::fribidi_get_bidi_type_name(char_type as u32);
-            // fribidi_bindings::fribidi_get_par_direction(bidi_type_name, len);
-            fribidi_bindings::fribidi_get_par_direction(char_types.as_ptr() as *const u32, char_types.len() as i32)
-        };
-
-        unsafe { std::mem::transmute (par_direction) }
-    }
-
     /// fribidi_get_par_embedding_levels_ex - get bidi embedding levels of a paragraph
     ///
     /// This function finds the bidi embedding levels of a single paragraph,
@@ -310,61 +219,12 @@ mod test
     }
 
     #[test]
-    fn test_get_bidi_type ()
-    {
-        let ch = 'غ';
-        let ch_type = Fribidi::get_bidi_type(ch);
-        let gt = CharType::ArabicLetter;
-        
-        assert_eq!(ch_type, gt);
-    }
-
-    #[test]
-    fn test_get_bidi_types ()
-    {
-        let text = U32String::from("غ!A西Б1٤");
-        let types = Fribidi::get_bidi_types(&text);
-        let gt = vec![
-            CharType::ArabicLetter,
-            CharType::OtherNeutral,
-            CharType::LeftToRight,
-            CharType::LeftToRight,
-            CharType::LeftToRight,
-            CharType::EuropeanNumeral,
-            CharType::ArabicNumeral
-        ];
-        
-        assert_eq!(types, gt);
-    }
-
-    #[test]
-    fn test_get_bidi_type_name ()
-    {
-        let char_type = CharType::EuropeanNumberSeparator;
-        let gt = "EuropeanNumberSeparator".to_owned();
-
-        let char_type_name = Fribidi::get_bidi_type_name(char_type);
-        assert_eq!(char_type_name, gt);
-    }
-
-    #[test]
-    fn test_get_par_direction ()
-    {
-        let char_types = vec![CharType::ArabicLetter, CharType::ArabicNumeral, CharType::LeftToRight, CharType::LeftToRight];
-        let gt = ParagraphType::RightToLeft;
-
-        let par_dir = Fribidi::get_par_direction(&char_types);
-
-        assert_eq!(par_dir, gt);
-    }
-
-    #[test]
     fn test_get_par_embedding_levels_ex ()
     {
         let text = U32String::from("(أحمد خالد 比 توفـــــيق boieng 1997)");
-        let char_types = Fribidi::get_bidi_types(&text);
+        let char_types = CharType::into_chartypes(text.as_vec());
         let bracket_types = BracketType::parse(&text, &char_types);
-        let paragraph_dir = Fribidi::get_par_direction(&char_types);
+        let paragraph_dir = ParagraphType::direction(&char_types);
 
         let res = Fribidi::get_par_embedding_levels_ex(
             &char_types,

@@ -115,7 +115,7 @@ mod test
     fn test_get_bracket_types()
     {
         let text = U32String::from("[{][أحمد)");
-        let char_types = crate::Fribidi::get_bidi_types(&text);
+        let char_types = crate::CharType::into_chartypes(text.as_vec());
         let bracket_types = BracketType::parse(&text, &char_types);
         let gt: Vec<BracketType> = [2147483739 as u32, 2147483771, 91, 2147483739, 0, 0, 0, 0, 40]
             .iter()

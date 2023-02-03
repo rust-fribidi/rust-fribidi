@@ -34,36 +34,81 @@ pub enum CharType
     PopDirectionalIsolate    = fribidi_bindings::FriBidiCharType_FRIBIDI_TYPE_PDI,
 }
 
-impl TryFrom<Char> for CharType
+/// BUG
+impl From<Char> for CharType
 {
-    type Error = &'static str;
-
-    fn try_from(raw: Char) -> Result<Self, Self::Error>
+    fn from(raw: Char) -> Self
     {
-        let res: CharType = unsafe { transmute(raw) };
-        if res as Char == raw
-        {
-            Ok(res)
-        }
-        else
-        {
-            Err("Wrong Char input")
-        }
+        let char_type = unsafe {
+            transmute (
+                fribidi_bindings::fribidi_get_bidi_type(raw as Char)
+            )
+        };
+
+        char_type
     }
 }
 
-impl TryFrom<char> for CharType
+impl From<char> for CharType
 {
-    type Error = &'static str;
-
-    fn try_from(raw: char) -> Result<Self, Self::Error>
+    fn from(raw: char) -> Self
     {
-        (raw as Char).try_into()
+        (raw as Char).into()
     }
 }
 
 impl CharType
 {
+    /// fribidi_get_bidi_type - get character bidi type
+    ///
+    /// This function returns the bidi type of a character as defined in Table 3.7
+    /// Bidirectional Character Types of the Unicode Bidirectional Algorithm
+    /// available at
+    /// http://www.unicode.org/reports/tr9/#Bidirectional_Character_Types, using
+    /// data provided in file UnicodeData.txt of the Unicode Character Database
+    /// available at http://www.unicode.org/Public/UNIDATA/UnicodeData.txt.
+    ///
+    /// There are a few macros defined in fribidi-bidi-types.h for querying a bidi
+    /// type.
+    ///
+    pub fn into_chartype(chartype: Char) -> CharType
+    {
+        chartype.into()
+    }
+
+    /// fribidi_get_bidi_types - get bidi types for an string of characters
+    ///
+    /// This function finds the bidi types of an string of characters.  See
+    /// fribidi_get_bidi_type() for more information about the bidi types returned
+    /// by this function.
+    ///
+    pub fn into_chartypes(chartypes: &Vec<Char>) -> Vec<CharType>
+    {
+        chartypes
+            .iter()
+            .map(|&ch| (ch as Char).into())
+            .collect()
+    }
+
+    /// fribidi_get_bidi_type_name - get bidi type name
+    ///
+    /// This function returns the bidi type name of a character type.
+    ///
+    /// The type names are the same as ones defined in Table 3.7 Bidirectional
+    /// Character Types of the Unicode Bidirectional Algorithm available at
+    /// http://www.unicode.org/reports/tr9/#Bidirectional_Character_Types, with a
+    /// few modifications: L->LTR, R->RTL, B->BS, S->SS.
+    ///
+    pub fn name (char_type: CharType) -> String
+    {
+        // unsafe {
+        //     let bidi_type_name = fribidi_bindings::fribidi_get_bidi_type_name(char_type as u32);
+        //     std::ffi::CStr::from_ptr(bidi_type_name).to_str().unwrap()
+        // }
+
+        format!("{:?}", char_type)
+    }
+
     /// Is right to left: RTL, AL, RLE, RLO?
     pub fn is_rtl(ch: Char) -> bool
     {
@@ -75,11 +120,6 @@ impl CharType
     {
         ch & fribidi_bindings::FRIBIDI_MASK_ARABIC != 0
     }
-
-    // pub fn is_(ch: Char) -> bool
-    // {
-    //     ch & fribidi_bindings:: != 0
-    // }
 
     pub fn is_strong(ch: Char) -> bool
     {
@@ -210,11 +250,11 @@ impl CharType
     }
 
     /// Change numbers to RTL: EN,AN -> RTL.
-    pub fn into_right_to_left(ch: Char) -> Result<CharType, &'static str>
+    pub fn into_right_to_left(ch: Char) -> CharType
     {
         match Self::is_number(ch) {
-            true => Ok(CharType::RightToLeft),
-            false => ch.try_into()
+            true => CharType::RightToLeft,
+            false => ch.into()
         }
     }
 
@@ -226,5 +266,51 @@ impl CharType
             true => LevelType::to_chartype(&LevelType::from_char(ch)),
 		    false => CharType::OtherNeutral
         }
+    }
+}
+
+mod test
+{
+    use widestring::U32String;
+    use crate::char::CharType;
+
+    #[test]
+    fn test_type ()
+    {
+        let ch = 'غ';
+        let ch_type: Result<CharType, _> = ch.try_into();
+        // assert!(ch_type.is_ok());
+        let gt = CharType::ArabicLetter;
+        
+        assert_eq!(ch_type.unwrap(), gt);
+    }
+
+    #[test]
+    fn test_get_bidi_types ()
+    {
+        let text = U32String::from("غ!A西Б1٤");
+        let types = CharType::into_chartypes(text.as_vec());
+        // assert!(types.is_ok());
+        let gt = vec![
+            CharType::ArabicLetter,
+            CharType::OtherNeutral,
+            CharType::LeftToRight,
+            CharType::LeftToRight,
+            CharType::LeftToRight,
+            CharType::EuropeanNumeral,
+            CharType::ArabicNumeral
+        ];
+        
+        assert_eq!(types, gt);
+    }
+
+    #[test]
+    fn test_get_bidi_type_name ()
+    {
+        let char_type = CharType::EuropeanNumberSeparator;
+        let gt = "EuropeanNumberSeparator".to_owned();
+
+        let char_type_name = CharType::name(char_type);
+        assert_eq!(char_type_name, gt);
     }
 }
