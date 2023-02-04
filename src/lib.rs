@@ -1,6 +1,6 @@
 use std::ptr::{null_mut, null};
 
-use widestring::{U32String, u32str};
+use widestring::{U32String, u32str, U32Str};
 
 use fribidi_sys::fribidi_bindings;
 
@@ -12,6 +12,8 @@ pub mod level;
 use level::LevelType;
 pub mod paragraph;
 use paragraph::ParagraphType;
+pub mod flag;
+use flag::FriBidiFlag;
 
 pub struct Fribidi;
 impl Fribidi
@@ -38,7 +40,7 @@ impl Fribidi
     ///
     /// Returns: the input string after removing the marks.
     ///
-    pub fn remove_bidi_marks<'a>(
+    pub fn remove_bidirectional_marks<'a>(
         input_str: &'a mut U32String,
         positions_to_this: Option<&mut Vec<i32>>,
         position_from_this_list: Option<&mut Vec<i32>>,
@@ -84,9 +86,9 @@ impl Fribidi
     ///
     pub fn logic_to_visual(
         input_str: &U32String,
-        pbase_dir: ParagraphType,
-        positions_l_to_v: Option<&mut Vec<i32>>,
-        positions_v_to_l: Option<&mut Vec<i32>>,
+        paragraph_direction: ParagraphType,
+        positions_logic_to_visual: Option<&mut Vec<i32>>,
+        positions_visual_to_logic: Option<&mut Vec<i32>>,
         embedding_levels: Option<&mut Vec<LevelType>>
     ) -> Result<(U32String, i8), String>
     {
@@ -96,10 +98,10 @@ impl Fribidi
             fribidi_bindings::fribidi_log2vis(
                 input_str.as_ptr(),
                 input_str.len() as i32,
-                &mut (pbase_dir as u32),
+                &mut (paragraph_direction as u32),
                 visual_str.as_mut_ptr(),
-                if let Some(positions) = positions_l_to_v {positions.as_mut_ptr()} else {null_mut()},
-                if let Some(positions) = positions_v_to_l {positions.as_mut_ptr()} else {null_mut()},
+                if let Some(positions) = positions_logic_to_visual {positions.as_mut_ptr()} else {null_mut()},
+                if let Some(positions) = positions_visual_to_logic {positions.as_mut_ptr()} else {null_mut()},
                 if let Some(levels) = embedding_levels {levels.as_mut_ptr() as *mut i8} else {null_mut()}
             )
         };
@@ -127,7 +129,7 @@ impl Fribidi
     /// (memory allocation failure most probably).
     ///
     // FRIBIDI_ENTRY FriBidiLevel
-    pub fn get_par_embedding_levels_ex (
+    pub fn get_paragraph_embedding_levels_ex (
         char_types: &Vec<CharType>,
         bracket_types: Option<&Vec<BracketType>>,
         paragraph_direction: ParagraphType
@@ -160,6 +162,75 @@ impl Fribidi
             _ => Ok((res, LevelType(max_embedding_level), paragraph_direction))
         }
     }
+
+    /// reorder_line - reorder a line of logical string to visual
+    ///
+    /// This function reorders the characters in a line of text from logical to
+    /// final visual order.  This function implements part 4 of rule L1, and rules
+    /// L2 and L3 of the Unicode Bidirectional Algorithm available at
+    /// http://www.unicode.org/reports/tr9/#Reordering_Resolved_Levels.
+    ///
+    /// As a side effect it also sets position maps if not NULL.
+    ///
+    /// You should provide the resolved paragraph direction and embedding levels as
+    /// set by get_paragraph_embedding_levels().  Also note that the embedding
+    /// levels may change a bit.  To be exact, the embedding level of any sequence
+    /// of white space at the end of line is reset to the paragraph embedding level
+    /// (That is part 4 of rule L1).
+    ///
+    /// Note that the bidi types and embedding levels are not reordered.  You can
+    /// reorder these (or any other) arrays using the map later.  The user is
+    /// responsible to initialize map to something sensible, like an identity
+    /// mapping, or pass NULL if no map is needed.
+    ///
+    /// There is an optional part to this function, which is whether non-spacing
+    /// marks for right-to-left parts of the text should be reordered to come after
+    /// their base characters in the visual string or not.  Most rendering engines
+    /// expect this behavior, but console-based systems for example do not like it.
+    /// This is controlled by the FRIBIDI_FLAG_REORDER_NSM flag.  The flag is on
+    /// in FRIBIDI_FLAGS_DEFAULT.
+    ///
+    /// Returns: Maximum level found in this line plus one, or zero if any error
+    /// occurred (memory allocation failure most probably).
+    ///
+    pub fn reorder_line(
+        flags: FriBidiFlag,                             // reorder flags
+        chartypes: &Vec<CharType>,	                    // input list of bidi types as returned by fribidi_get_bidi_types()
+        base_dir: ParagraphType,	                    // resolved paragraph base direction
+        embedding_levels: Option<&mut Vec<LevelType>>,	// input list of embedding levels, as returned by fribidi_get_par_embedding_levels
+        visual_str: &mut U32Str,	                    // visual string to reorder
+    ) -> Result<(LevelType, Vec<u32>), &'static str>    // a map of string indices which is reordered to reflect where each glyph ends up.
+    {
+        let embedding_levels_len = embedding_levels.as_ref().map_or(visual_str.len(), |levels| levels.len());
+        if chartypes.len() != embedding_levels_len || chartypes.len() != visual_str.len()
+        {
+            return Err("chartypes.len() != embedding_levels.len() != visual_str.len()");
+        }
+
+        // let mut res: Vec<usize> = vec![1; chartypes.len()];
+        let mut res_map: Vec<u32> = (0..visual_str.len() as u32).collect();
+
+        let max_level = unsafe {
+            fribidi_bindings::fribidi_reorder_line(
+                flags as u32,
+                chartypes.as_ptr() as *const u32,
+                visual_str.len() as i32,
+                0,
+                base_dir as u32,
+                // if let Some(levels) = embedding_levels { levels.as_mut_ptr() as *mut i8 } else { null_mut() },
+                embedding_levels.map_or(null_mut(), |levels| levels.as_mut_ptr() as *mut i8),
+                visual_str.as_mut_ptr(),
+                res_map.as_mut_ptr() as *mut i32
+            )
+        };
+
+        match max_level
+        {
+            0 => Err("memory allocation failed"),
+            _ => Ok((max_level.into(), res_map))
+        }
+    }
+  
 }
 
 #[cfg(test)]
@@ -169,6 +240,7 @@ mod test
 
     #[allow(unused_imports)]
     use crate::BracketType;
+    use crate::flag::FriBidiFlag;
 
     use super::{Fribidi, ParagraphType, CharType, LevelType};
 
@@ -183,7 +255,7 @@ mod test
         let mut position_from_this_list :Vec<i32> = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
         assert_eq!(
-            Fribidi::remove_bidi_marks(&mut text, Some(&mut positions_to_this), Some(&mut position_from_this_list), None),
+            Fribidi::remove_bidirectional_marks(&mut text, Some(&mut positions_to_this), Some(&mut position_from_this_list), None),
             Ok(&gt)
         );
 
@@ -219,14 +291,14 @@ mod test
     }
 
     #[test]
-    fn test_get_par_embedding_levels_ex ()
+    fn test_get_paragraph_embedding_levels_ex ()
     {
         let text = U32String::from("(أحمد خالد 比 توفـــــيق boieng 1997)");
         let char_types = CharType::into_chartypes(text.as_vec());
         let bracket_types = BracketType::parse(&text, &char_types);
         let paragraph_dir = ParagraphType::direction(&char_types);
 
-        let res = Fribidi::get_par_embedding_levels_ex(
+        let res = Fribidi::get_paragraph_embedding_levels_ex(
             &char_types,
             Some(&bracket_types),
             paragraph_dir
@@ -245,5 +317,37 @@ mod test
         assert_eq!(embedding_levels, gt_embedding_levels);
         assert_eq!(max_embedding_level, gt_max_embedding_level);
         assert_eq!(paragraph_type, gt_paragraph_type);
+    }
+
+    #[test]
+    fn test_reorder_line()
+    {
+        let mut text = U32String::from(")دلاخ boieng 1997 قيـــــفوت 比 دمحأ(");
+        let gt = U32String::from("(أحمد 比 توفـــــيق boieng 1997 خالد)");
+        let gt_map = vec![35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 5, 4, 3, 2, 1, 0];
+
+        let char_types = CharType::into_chartypes(text.as_vec());
+        let paragraph_direction = ParagraphType::direction(&char_types);
+        let bracket_types = BracketType::parse(&text, &char_types);
+
+        let embedding_levels = Fribidi::get_paragraph_embedding_levels_ex(
+            &char_types,
+            Some(&bracket_types),
+            paragraph_direction
+        );
+        let (mut embedding_levels, _, _) = embedding_levels.unwrap();
+
+        let res = Fribidi::reorder_line(
+            FriBidiFlag::Default,
+            &char_types,
+            paragraph_direction,
+            Some(&mut embedding_levels),
+            &mut text
+        );
+
+        let res_map = res.unwrap().1;
+
+        assert_eq!(text, gt);
+        assert_eq!(res_map, gt_map);
     }
 }
