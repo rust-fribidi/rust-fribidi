@@ -71,9 +71,9 @@ impl CharType
     /// There are a few macros defined in fribidi-bidi-types.h for querying a bidi
     /// type.
     ///
-    pub fn into_chartype(chartype: Char) -> CharType
+    pub fn into_chartype(char: Char) -> CharType
     {
-        chartype.into()
+        char.into()
     }
 
     /// fribidi_get_bidi_types - get bidi types for an string of characters
@@ -82,9 +82,9 @@ impl CharType
     /// fribidi_get_bidi_type() for more information about the bidi types returned
     /// by this function.
     ///
-    pub fn into_chartypes(chartypes: &Vec<Char>) -> Vec<CharType>
+    pub fn into_chartypes(chars: &Vec<Char>) -> Vec<CharType>
     {
-        chartypes
+        chars
             .iter()
             .map(|&ch| (ch as Char).into())
             .collect()
