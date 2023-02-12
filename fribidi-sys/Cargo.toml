@@ -1,7 +1,7 @@
 [package]
 name = "fribidi-sys"
 description = "Raw fribidi bindings for Rust"
-repository = "https://github.com/baronleonardo/fribidi"
+repository = "https://github.com/rust-fribidi/rust-fribidi"
 version = "0.1.0"
 authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@protonmail.com>"]
 keywords = ["fribidi", "arabic", "RTL", "ffi"]

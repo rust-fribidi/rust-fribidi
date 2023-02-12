@@ -1,7 +1,7 @@
 [package]
 name = "fribidi"
 description = "fribidi bindings for Rust"
-repository = "https://github.com/baronleonardo/rust-fribidi"
+repository = "https://github.com/rust-fribidi/rust-fribidi"
 # documentation = "https://rust-sdl2.github.io/rust-fribidi/rust-fribidi"
 license = "MIT"
 authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@protonmail.com>"]
