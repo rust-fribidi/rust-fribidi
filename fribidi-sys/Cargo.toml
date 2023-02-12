@@ -1,9 +1,9 @@
 [package]
 name = "fribidi-sys"
-description = "Raw fribidi bindings for Rust, used internally fribidi"
+description = "Raw fribidi bindings for Rust"
 repository = "https://github.com/baronleonardo/fribidi"
 version = "0.1.0"
-authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@protonmail.com>"]
+authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@zohomail.com>"]
 keywords = ["fribidi", "arabic", "RTL", "ffi"]
 categories = ["rendering","external-ffi-bindings"]
 license = "MIT"

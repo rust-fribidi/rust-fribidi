@@ -1,10 +1,10 @@
 [package]
 name = "fribidi"
-description = "SDL2 bindings for Rust"
+description = "fribidi bindings for Rust"
 repository = "https://github.com/baronleonardo/rust-fribidi"
-# documentation = "https://rust-sdl2.github.io/rust-sdl2/sdl2/"
+# documentation = "https://rust-sdl2.github.io/rust-fribidi/rust-fribidi"
 license = "MIT"
-authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@protonmail.com>"]
+authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@zohomail.com>"]
 keywords = ["fribidi", "text", "font", "api", "arabic", "RTL"]
 categories = ["rendering","api-bindings"]
 readme = "README.md"
