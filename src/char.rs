@@ -273,6 +273,7 @@ impl CharType
     }
 }
 
+#[cfg(test)]
 mod test
 {
     use widestring::U32String;

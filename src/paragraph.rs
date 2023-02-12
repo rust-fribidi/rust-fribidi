@@ -54,6 +54,7 @@ impl ParagraphType
     }
 }
 
+#[cfg(test)]
 mod test
 {
     use crate::{char::CharType, paragraph::ParagraphType};
