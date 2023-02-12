@@ -59,7 +59,7 @@ impl From<char> for CharType
 
 impl CharType
 {
-    /// fribidi_get_bidi_type - get character bidi type
+    /// same as `fribidi_get_bidi_type` - get character bidi type
     ///
     /// This function returns the bidi type of a character as defined in Table 3.7
     /// Bidirectional Character Types of the Unicode Bidirectional Algorithm
@@ -76,7 +76,7 @@ impl CharType
         char.into()
     }
 
-    /// fribidi_get_bidi_types - get bidi types for an string of characters
+    /// same as `fribidi_get_bidi_types` - get bidi types for an string of characters
     ///
     /// This function finds the bidi types of an string of characters.  See
     /// fribidi_get_bidi_type() for more information about the bidi types returned
@@ -90,7 +90,7 @@ impl CharType
             .collect()
     }
 
-    /// fribidi_get_bidi_type_name - get bidi type name
+    /// same as `fribidi_get_bidi_type_name` - get bidi type name
     ///
     /// This function returns the bidi type name of a character type.
     ///
@@ -108,6 +108,10 @@ impl CharType
 
         format!("{:?}", char_type)
     }
+
+    ///
+    /// These are the same macros inside `fribidi-bidi-types.h`
+    ///
 
     /// Is right to left: RTL, AL, RLE, RLO?
     pub fn is_rtl(ch: Char) -> bool

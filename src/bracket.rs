@@ -31,7 +31,7 @@ impl From<char> for BracketType
     
 impl BracketType
 {
-    /// new - get bracketed character
+    /// same as `fribidi_get_bracket` - get bracketed character
     ///
     /// This function finds the bracketed equivalent of a character as defined in
     /// the file BidiBrackets.txt of the Unicode Character Database available at
@@ -70,7 +70,7 @@ impl BracketType
         self.0 & fribidi_bindings::FRIBIDI_BRACKET_ID_MASK
     }
 
-    /// parse - get bracketed characters
+    /// same as `fribidi_get_bracket_types` - get bracketed characters
     ///
     /// This function finds the bracketed characters of an string of characters.
     /// See fribidi_get_bracket() for more information about the bracketed

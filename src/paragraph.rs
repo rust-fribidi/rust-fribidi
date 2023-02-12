@@ -17,7 +17,7 @@ pub enum ParagraphType
 
 impl ParagraphType
 {
-    /// fribidi_get_par_direction - get base paragraph direction
+    /// same as `fribidi_get_par_direction` - get base paragraph direction
     ///
     /// This function finds the base direction of a single paragraph,
     /// as defined by rule P2 of the Unicode Bidirectional Algorithm available at

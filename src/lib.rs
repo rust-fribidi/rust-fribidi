@@ -18,7 +18,7 @@ use flag::FriBidiFlag;
 pub struct Fribidi;
 impl Fribidi
 {
-    /// fribidi_remove_bidi_marks - remove bidi marks out of an string
+    /// same_as `fribidi_remove_bidi_marks` - remove bidi marks out of an string
     ///
     /// This function removes the bidi and boundary-neutral marks out of an string
     /// and the accompanying lists.  It implements rule X9 of the Unicode
@@ -66,7 +66,7 @@ impl Fribidi
         }
     }
 
-    /// fribidi_log2vis - get visual string
+    /// same_as `fribidi_log`2vis - get visual string
     ///
     /// This function converts the logical input string to the visual output
     /// strings as specified by the Unicode Bidirectional Algorithm.  As a side
@@ -81,7 +81,7 @@ impl Fribidi
     /// separate paragraphs and then carry over the resolved pbase_dir
     /// between the subsequent invocations.
     ///
-    /// Returns: Maximum level found plus one, or zero if any error occurred
+    /// Returns: visual result string and the maximum level found plus one, or zero if any error occurred
     /// (memory allocation failure most probably).
     ///
     pub fn logic_to_visual(
@@ -113,7 +113,7 @@ impl Fribidi
         }
     }
 
-    /// fribidi_get_par_embedding_levels_ex - get bidi embedding levels of a paragraph
+    /// same_as `fribidi_get_par_embedding_levels_ex` - get bidi embedding levels of a paragraph
     ///
     /// This function finds the bidi embedding levels of a single paragraph,
     /// as defined by the Unicode Bidirectional Algorithm available at
@@ -125,8 +125,11 @@ impl Fribidi
     /// There are a few macros defined in fribidi-bidi-types.h to work with this
     /// embedding levels.
     ///
-    /// Returns: Maximum level found plus one, or zero if any error occurred
-    /// (memory allocation failure most probably).
+    /// Returns: 
+    ///     0: the result embedding levels
+    ///     1: Maximum level found plus one, or zero if any error occurred
+    ///        (memory allocation failure most probably).
+    ///     2: the result ParagraphType
     ///
     // FRIBIDI_ENTRY FriBidiLevel
     pub fn get_paragraph_embedding_levels_ex (
@@ -163,7 +166,7 @@ impl Fribidi
         }
     }
 
-    /// reorder_line - reorder a line of logical string to visual
+    /// same_as `fribidi_reorder_line` - reorder a line of logical string to visual
     ///
     /// This function reorders the characters in a line of text from logical to
     /// final visual order.  This function implements part 4 of rule L1, and rules
@@ -191,7 +194,7 @@ impl Fribidi
     /// in FRIBIDI_FLAGS_DEFAULT.
     ///
     /// Returns: Maximum level found in this line plus one, or zero if any error
-    /// occurred (memory allocation failure most probably).
+    /// occurred (memory allocation failure most probably) and the reordered result line.
     ///
     pub fn reorder_line(
         flags: FriBidiFlag,                             // reorder flags
