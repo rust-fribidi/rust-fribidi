@@ -269,8 +269,8 @@ mod test
     #[test]
     fn test_log2vis()
     {
-        let text = U32String::from("\u{0686}\u{0631}\u{0645}\u{0647}\u{064A}\u{0646}");
-        let gt = (U32String::from("\u{FEE6}\u{FEF4}\u{FEEC}\u{FEE3}\u{FEAE}\u{FB7C}"), 2);
+        let text = U32String::from("چرمهين");
+        let gt = (U32String::from("ﻦﻴﻬﻣﺮﭼ"), 2);
         let gt_positions_l_to_v = vec![5, 4, 3, 2, 1, 0];
         let gt_positions_v_to_l = vec![5, 4, 3, 2, 1, 0];
         let gt_embedding_levels = vec![LevelType(1); 6];
@@ -281,7 +281,7 @@ mod test
 
         let (res, maximum_level) = Fribidi::logic_to_visual(
             &text,
-            ParagraphType::RightToLeft,
+            ParagraphType::OtherNeutral,    // let fribidi detect the type
             Some(&mut positions_l_to_v),
             Some(&mut positions_v_to_l),
             Some(&mut embedding_levels)
