@@ -2,14 +2,14 @@
 name = "fribidi"
 description = "fribidi bindings for Rust"
 repository = "https://github.com/rust-fribidi/rust-fribidi"
-# documentation = "https://rust-sdl2.github.io/rust-fribidi/rust-fribidi"
+documentation = "https://docs.rs/fribidi/latest/fribidi"
 license = "MIT"
 authors = ["Mohamed A. Elmeligy <mohamed.a.elmeligy@protonmail.com>"]
 keywords = ["fribidi", "text", "font", "arabic", "RTL"]
 categories = ["rendering","api-bindings"]
 readme = "README.md"
 resolver = "2"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [build-dependencies]
